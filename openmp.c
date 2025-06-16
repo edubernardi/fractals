@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <omp.h>
+#include <omp.h> // Required for OpenMP functions and timing
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -21,7 +21,10 @@ void fractal(unsigned char *image, float left, float top, float xside, float ysi
     xscale = xside / WIDTH;
     yscale = yside / HEIGHT;
 
-    // Parallelize the outer loop across threads
+    // Paraleliza o loop externo, sobre o eixo y (vertical).
+    // A configuração 'schedule(dynamic)' é recomendada porque as áreas podem ter diferentes complexidades de cálculo,
+    // como as bordas do conjunto de Mandelbrot, que exigem mais iterações.
+    // O eixo x (horizontal) é privado para cada thread.
     #pragma omp parallel for private(x) schedule(dynamic)
     for (y = 0; y < HEIGHT; y++) {
         for (x = 0; x < WIDTH; x++) {
@@ -58,6 +61,8 @@ void fractal(unsigned char *image, float left, float top, float xside, float ysi
 
 int main()
 {
+    double start_total_time = omp_get_wtime();
+
     // Define a região do plano complexo a ser visualizada
     float left = -1.75f;
     float top = -0.25f;
@@ -67,16 +72,21 @@ int main()
     // Aloca memória para a imagem em formato RGB, com 3 bytes por pixel
     unsigned char *image = (unsigned char*)malloc(WIDTH * HEIGHT * 3);
     if (!image) {
-        printf("Memory allocation failed!\n");
+        printf("Falha ao alocar memória para imagem!\n");
         return 1;
     }
 
-    // Set number of threads (optional - can also be set via OMP_NUM_THREADS environment variable)
+    // Usa o máximo de threads disponíveis no sistema, se não for explicitamente definido
     omp_set_num_threads(omp_get_max_threads());
     
-    printf("Calculating Mandelbrot set with %d threads...\n", omp_get_max_threads());
+    printf("Gerando imagem com %d threads...\n", omp_get_max_threads());
+    
+    double start_computation_time = omp_get_wtime();
     
     fractal(image, left, top, xside, yside);
+
+    double end_computation_time = omp_get_wtime();
+    printf("Tempo de computação do fractal: %.4f segundos\n", end_computation_time - start_computation_time);
 
     // Função para salvar a imagem como PNG
     if (!stbi_write_png("mandelbrot_omp.png", WIDTH, HEIGHT, 3, image, WIDTH * 3)) {
@@ -86,5 +96,9 @@ int main()
     }
 
     free(image);
+
+    double end_total_time = omp_get_wtime();
+    printf("Tempo total de execução (inclui salvar a imagem): %.4f segundos\n", end_total_time - start_total_time);
+
     return 0;
 }

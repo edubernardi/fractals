@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "stb_image_write.h"
@@ -57,6 +58,12 @@ void fractal(unsigned char *image, float left, float top, float xside, float ysi
 
 int main()
 {
+    struct timeval start_total, end_total;
+    struct timeval start_computation, end_computation;
+    double computation_time, total_time;
+
+    gettimeofday(&start_total, NULL);
+
     // Define a região do plano complexo a ser visualizada
     float left = -1.75f;
     float top = -0.25f;
@@ -66,19 +73,32 @@ int main()
     // Aloca memória para a imagem em formato RGB, com 3 bytes por pixel
     unsigned char *image = (unsigned char*)malloc(WIDTH * HEIGHT * 3);
     if (!image) {
-        printf("Memory allocation failed!\n");
+        printf("Falha ao alocar memória para imagem!\n");
         return 1;
     }
 
+    gettimeofday(&start_computation, NULL);
     fractal(image, left, top, xside, yside);
+    gettimeofday(&end_computation, NULL);
+
+    computation_time = (end_computation.tv_sec - start_computation.tv_sec) +
+                       (end_computation.tv_usec - start_computation.tv_usec) / 1000000.0;
+    printf("Tempo de computação do fractal: %.4f seconds\n", computation_time);
 
     // Função para salvar a imagem como PNG
-    if (!stbi_write_png("mandelbrot.png", WIDTH, HEIGHT, 3, image, WIDTH * 3)) {
+    if (!stbi_write_png("mandelbrot_seq.png", WIDTH, HEIGHT, 3, image, WIDTH * 3)) {
         printf("Erro ao salvar imagem\n");
     } else {
         printf("Imagem salva no arquivo mandelbrot.png\n");
     }
 
     free(image);
+
+    gettimeofday(&end_total, NULL);
+
+    total_time = (end_total.tv_sec - start_total.tv_sec) +
+                 (end_total.tv_usec - start_total.tv_usec) / 1000000.0;
+    printf("Tempo total de execução (inclui salvar a imagem): %.4f segundos\n", total_time);
+
     return 0;
 }
