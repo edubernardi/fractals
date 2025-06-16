@@ -83,7 +83,7 @@ int main()
 
     computation_time = (end_computation.tv_sec - start_computation.tv_sec) +
                        (end_computation.tv_usec - start_computation.tv_usec) / 1000000.0;
-    printf("Tempo de computação do fractal: %.4f seconds\n", computation_time);
+    printf("Tempo de computação do fractal: %.4f segundos\n", computation_time);
 
     // Função para salvar a imagem como PNG
     if (!stbi_write_png("mandelbrot_seq.png", WIDTH, HEIGHT, 3, image, WIDTH * 3)) {
